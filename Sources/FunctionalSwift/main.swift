@@ -47,11 +47,15 @@ func basketURL(_ basket: String) throws -> Pipe<URL> {
     return try Pipe(url) => URL.init
 }
 
-func dataTaskPipe(basket: String) async throws -> Pipe<Any> {
+func decode<T: Decodable>(data: Data) throws -> T {
+    try JSONDecoder().decode(T.self, from: data)
+}
+
+func dataTaskPipe(basket: String) async throws -> Pipe<String> {
     try await basketURL(basket)
     => requestWithContentType(url:)
     +  dataTaskPublisher(with:)
-    => decodeJSON(data:)
+    => decode(data:)
 }
 
 

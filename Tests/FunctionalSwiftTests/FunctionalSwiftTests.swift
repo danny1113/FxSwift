@@ -70,7 +70,7 @@ final class FunctionalSwiftTests: XCTestCase {
     }
     
     func toURL(string: String) throws -> Pipe<URL> {
-        try Pipe(string) => URL.init
+        try Pipe(string) => URL.init(string:)
     }
     
     func dataTaskPipe(with url: URL) async throws -> Pipe<Any> {
