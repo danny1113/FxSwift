@@ -13,7 +13,7 @@ The core of FxSwift is `Pipe`. It's a wrapper that takes a function, transform v
 @frozen
 public struct Pipe<Object> {
 
-    public init<T>(_ object: Object)
+    public init(_ object: Object)
     public init(_ closure: () throws -> Object) rethrows
     
     public func unwrap() -> Object
@@ -36,7 +36,7 @@ let hello = Pipe("Hello")
 let world = Pipe("world")
 let ex = Pipe("!")
 
-func split(lhs: String, rhs: String) -> String {
+func comma(lhs: String, rhs: String) -> String {
     lhs + ", " + rhs
 }
 
@@ -49,7 +49,7 @@ That's say you want to combine three words into `"Hello, world!"` with functiona
 ```swift
 let pipe = hello
     .combine(world)  // Pipe<(String, String)>
-    .map(split)      // Pipe<String>
+    .map(comma)      // Pipe<String>
     .combine(ex)     // Pipe<(String, String)>
     .map(combine)    // Pipe<String>
 ```
@@ -57,7 +57,7 @@ let pipe = hello
 Or you can use the convinent operator provided by Pipe:
 
 ```swift
-let pipe = hello + world => split  // hello, world
+let pipe = hello + world => comma  // hello, world
          + ex => combine           // hello, world!
 ```
 
@@ -65,13 +65,13 @@ let pipe = hello + world => split  // hello, world
 
 Pipe have 2 custom operators: `=>` and `+`.
 
-`=>` is for pass the value to the next function.
+`=>` is for passing the value to the next function.
 
-`+` is for combining pipe or Combine's Publisher to the pipe on the left hand side.
+`+` is for combining two pipes together.
 
-### Combine Interoperatibility
+### Interoperate with Combine
 
-You can easily transform a pipe to AnyPublisher with FxSwift
+You can simply chain a function that returns an `AnyPublisher` to the pipe, and it will automatically transform to an async function for you.
 
 ```swift
 func dataTaskPublisher(
@@ -89,6 +89,19 @@ func decode<T: Decodable>(data: Data) throws -> T {
 
 let pipe: Pipe<T> = try await Pipe("http://www.example.com") // String
     => URL.init(string:)            // String => URL
-    +  dataTaskPublisher(for:)      // URL => Data
-    => decodeJSON(data:)            // Data => T
+    => dataTaskPublisher(for:)      // URL => Data
+    => decode(data:)                // Data => T
+```
+
+You can also transform pipe to an AnyPublisher:
+
+```swift
+func toInt(string: String) throws -> Pipe<Int> {
+    try Pipe(string) => Int.init
+}
+let subject = PassthroughSubject<String, Error>()
+
+let cancellable = subject
+    .compactMap(toInt(string:))
+    // => AnyPublisher<Int, Error>
 ```

@@ -7,15 +7,13 @@ import PackageDescription
 var dependencies: [Package.Dependency] = []
 var targets: [Target] = [
     .executableTarget(
-        name: "FunctionalSwift",
-        dependencies: [
-            
-        ]
+        name: "FxSwift",
+        dependencies: []
     ),
     .testTarget(
-        name: "FunctionalSwiftTests",
+        name: "FxSwiftTests",
         dependencies: [
-            "FunctionalSwift"
+            "FxSwift"
         ]
     ),
 ]
@@ -27,7 +25,7 @@ dependencies += [
 
 targets = [
     .executableTarget(
-        name: "FunctionalSwift",
+        name: "FxSwift",
         dependencies: [
             "OpenCombine",
             .product(name: "OpenCombineFoundation", package: "OpenCombine"),
@@ -36,9 +34,9 @@ targets = [
         ]
     ),
     .testTarget(
-        name: "FunctionalSwiftTests",
+        name: "FxSwiftTests",
         dependencies: [
-            "FunctionalSwift"
+            "FxSwift"
         ]
     ),
 ]
@@ -46,7 +44,7 @@ targets = [
 
 
 let package = Package(
-    name: "FunctionalSwift",
+    name: "FxSwift",
     platforms: [
         .macOS(.v10_15),
         .iOS(.v13),

@@ -1,6 +1,9 @@
 
 import XCTest
-import FunctionalSwift
+import FxSwift
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 #if canImport(Combine)
 import Combine
 #endif
@@ -9,9 +12,9 @@ import OpenCombineShim
 #endif
 
 
-final class FunctionalSwiftTests: XCTestCase {
+final class FxSwiftTests: XCTestCase {
     
-    typealias Pipe = FunctionalSwift.Pipe
+    typealias Pipe = FxSwift.Pipe
     
     func testPipeOperator() throws {
         let hello = Pipe("hello")
@@ -36,6 +39,46 @@ final class FunctionalSwiftTests: XCTestCase {
                   + ex => combine(lhs:rhs:)           // hello, world!
 
         XCTAssertEqual(pipe, pipe2)
+    }
+    
+    func testJSONDecode() throws {
+        struct TestModel: Decodable {
+            let value: String
+        }
+        
+        let jsonString = #"{"value": "ok"}"#
+        let pipe = try Pipe(jsonString)
+        => { $0.data(using: .utf8) }
+        => decode(data:)
+        => { (data: TestModel) -> TestModel in
+            data
+        }
+        print(pipe)
+    }
+    
+    func toURL(string: String) throws -> Pipe<URL> {
+        try Pipe(string) => URL.init(string:)
+    }
+    
+    func requestWithContentType(url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        return request
+    }
+    
+    func dataTaskPublisher(for request: URLRequest) -> AnyPublisher<Data, URLError> {
+        URLSession.shared.dataTaskPublisher(for: request)
+            .retry(2)
+            .map(\.data)
+            .eraseToAnyPublisher()
+    }
+
+    func decodeJSON(data: Data) throws -> Any {
+        try JSONSerialization.jsonObject(with: data)
+    }
+    
+    func decode<T: Decodable>(data: Data) throws -> T {
+        try JSONDecoder().decode(T.self, from: data)
     }
     
     private var cancellable: AnyCancellable?
@@ -67,33 +110,5 @@ final class FunctionalSwiftTests: XCTestCase {
         subject.send("http://www.example2.com ")
         subject.send("http://www.example3.com")
         wait(for: [expectation], timeout: 1)
-    }
-    
-    func toURL(string: String) throws -> Pipe<URL> {
-        try Pipe(string) => URL.init(string:)
-    }
-    
-    func dataTaskPipe(with url: URL) async throws -> Pipe<Any> {
-        try await Pipe(url)
-        => requestWithContentType(url:)
-        +  dataTaskPublisher(with:)
-        => decodeJSON(data:)
-    }
-    
-    func requestWithContentType(url: URL) -> URLRequest {
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        return request
-    }
-    
-    func dataTaskPublisher(with request: URLRequest) -> AnyPublisher<Data, URLError> {
-        URLSession.shared.dataTaskPublisher(for: request)
-            .retry(2)
-            .map(\.data)
-            .eraseToAnyPublisher()
-    }
-
-    func decodeJSON(data: Data) throws -> Any {
-        try JSONSerialization.jsonObject(with: data)
     }
 }

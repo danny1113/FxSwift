@@ -285,7 +285,7 @@ extension Pipe {
         }
     }
     
-    static public func + <T, E: Error>(
+    static public func => <T, E: Error>(
         lhs: Self,
         rhs: @escaping (Object) throws -> AnyPublisher<T, E>
     ) async throws -> Pipe<T> {

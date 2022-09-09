@@ -54,7 +54,7 @@ func decode<T: Decodable>(data: Data) throws -> T {
 func dataTaskPipe(basket: String) async throws -> Pipe<String> {
     try await basketURL(basket)
     => requestWithContentType(url:)
-    +  dataTaskPublisher(with:)
+    => dataTaskPublisher(with:)
     => decode(data:)
 }
 
