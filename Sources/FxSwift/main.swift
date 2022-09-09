@@ -1,11 +1,14 @@
 //
 //  main.swift
-//  
+//
 //
 //  Created by Danny on 2022/9/7.
 //
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 #if canImport(Combine)
 import Combine
 #endif
@@ -55,7 +58,8 @@ func dataTaskPipe(basket: String) async throws -> Pipe<String> {
     try await basketURL(basket)
     => requestWithContentType(url:)
     => dataTaskPublisher(with:)
-    => decode(data:)
+    // => decode(data:)
+    => { String(data: $0, encoding: .utf8 ) }
 }
 
 func dataTaskOptionalPipe(basket: String) async throws {
@@ -72,38 +76,13 @@ func dataTaskOptionalPipe(basket: String) async throws {
     print(pipe)
 }
 
-
-func split(lhs: String, rhs: String) -> String {
-    lhs + ", " + rhs
-}
-func combine(lhs: String, rhs: String) -> String {
-    lhs + rhs
-}
-
-let hello = Pipe("hello")
-let world = Pipe("world")
-let ex = Pipe("!")
-
-let pipe = hello
-    .combine(world)  // Pipe<(String, String)>
-    .map(split)      // Pipe<String>
-    .combine(ex)     // Pipe<(String, String)>
-    .map(combine)    // Pipe<String>
-
-// or
-let pipe2 = hello + world => split  // hello, world
-         + ex => combine           // hello, world!
-
-let result: String = pipe.unwrap() // hello, world!
-print(pipe == pipe2)
 let semaphore = DispatchSemaphore(value: 0)
 
-let subject = PassthroughSubject<String, Error>()
-
+let subject = PassthroughSubject<String, Never>()
+    
 let cancellable = subject
-    .compactMap(dataTaskPipe(basket:))
-//    .flatMap(basketURL(_:))
-//    .compactMap(basketURL(_:))
+    .compactTryMap(dataTaskPipe(basket:))
+    // .compactTryMap(basketURL)
     .sink { completion in
         switch completion {
         case .finished: return

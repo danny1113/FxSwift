@@ -56,8 +56,8 @@ final class FxSwiftTests: XCTestCase {
         print(pipe)
     }
     
-    func toURL(string: String) throws -> Pipe<URL> {
-        try Pipe(string) => URL.init(string:)
+    func toURL(string: String) -> Pipe<URL?> {
+        Pipe(string) =>? URL.init(string:)
     }
     
     func requestWithContentType(url: URL) -> URLRequest {
@@ -86,7 +86,7 @@ final class FxSwiftTests: XCTestCase {
     func testCombineInteroperate() throws {
         
         let expectation = expectation(description: "Combine_Interop")
-        let subject = PassthroughSubject<String, Error>()
+        let subject = PassthroughSubject<String, Never>()
         
         var counter = 0
         
@@ -110,5 +110,10 @@ final class FxSwiftTests: XCTestCase {
         subject.send("http://www.example2.com ")
         subject.send("http://www.example3.com")
         wait(for: [expectation], timeout: 1)
+    }
+    
+    func testOptionPipe() throws {
+        XCTAssertNil(toURL(string: "https:// www.example.com").unwrap())
+        XCTAssertNotNil(toURL(string: "https://www.example.com").unwrap())
     }
 }

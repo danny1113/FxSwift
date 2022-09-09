@@ -54,7 +54,7 @@ let pipe = hello
     .map(combine)    // hello, world!
 ```
 
-Or you can use the convinent operator provided by Pipe:
+Or you can use the convenient operator provided by Pipe:
 
 ```swift
 let pipe = hello + world => comma  // hello, world
@@ -90,28 +90,41 @@ let url = Pipe("https://www.example.com")
 let hello = Pipe("Hello")
 let world = Pipe("world")
 
-let pipe = hello + world  // Pipe<(String, String>
+let pipe = hello + world  // Pipe<(String, String)>
 ```
 
 ## Interoperate with Combine
 
-You can simply chain a function that returns an `AnyPublisher` to the pipe, and it will automatically transform to an async function for you.
+### ### Publisher -> Pipe
+
+To interoperate with Combine, FxSwift extend Publisher to support Pipe:
 
 ```swift
-extension Publisher where Failure == Never {
-    func map<Result>(_ transform: @escaping (Output) -> Pipe<Result>) -> AnyPublisher<Result, Never>
-    func map<Result>(_ transform: @escaping (Output) async -> Pipe<Result>) -> AnyPublisher<Result, Never>
-    func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
-    func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
-}
+extension Publisher {
 
-extension Publisher where Failure == Error {
-    func tryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-    func tryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-    func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-    func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+    public func map<Result>(_ transform: @escaping (Output) -> Pipe<Result>) -> Publishers.Map<Self, Result>
+
+    public func map<Result>(_ transform: @escaping (Output) async -> Pipe<Result>) async -> Publishers.FlatMap<Future<Result, Failure>, Self>
+
+    public func compactMap<Result>(_ transform: @escaping (Output) -> Pipe<Result?>) -> Publishers.CompactMap<Self, Result>
+
+    public func compactMap<Result>(_ transform: @escaping (Output) async -> Pipe<Result?>) -> Publishers.CompactMap<Publishers.FlatMap<Future<Result?, Failure>, Self>, Result>
+
+    public func tryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> Publishers.TryMap<Self, Result>
+
+    public func tryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+
+    public func tryCompactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result?>) -> Publishers.TryCompactMap<Self, Result>
+
+    public func tryCompactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result?>) -> AnyPublisher<Result, Error>
+
+    public func compactTryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result?>) -> Publishers.CompactMap<Self, Result>
+
+    public func compactTryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result?>) -> Publishers.CompactMap<Publishers.FlatMap<Future<Result?, Failure>, Self>, Result>
 }
 ```
+
+You can simply chain a function that returns an `AnyPublisher` to the pipe, and it will automatically transform to an async function for you:
 
 ```swift
 func dataTaskPublisher(
@@ -127,11 +140,17 @@ func decode<T: Decodable>(data: Data) throws -> T {
     try JSONDecoder().decode(T.self, from: data)
 }
 
-let pipe: Pipe<T> = try await Pipe("http://www.example.com") // String
-    => URL.init(string:)            // String => URL
-    => dataTaskPublisher(for:)      // URL => Data
-    => decode(data:)                // Data => T
+//             |--- T can be any type that conforms to Decodable
+//             |
+//             |          |------ need to await due to dataTaskPublisher(for:)
+//             |          |
+let pipe: Pipe<T> = try await Pipe("http://www.example.com")  // String
+    => URL.init(string:)          // String => URL
+    => dataTaskPublisher(for:)    // URL => Data
+    => decode(data:)              // Data => T
 ```
+
+### Pipe -> Publisher
 
 You can also transform pipe to an AnyPublisher:
 
@@ -139,9 +158,18 @@ You can also transform pipe to an AnyPublisher:
 func toInt(string: String) throws -> Pipe<Int> {
     try Pipe(string) => Int.init
 }
+
 let subject = PassthroughSubject<String, Error>()
 
 let cancellable = subject
     .compactMap(toInt(string:))
     // => AnyPublisher<Int, Error>
+    .sink { completion in
+        
+    } receivedValue: { (value: Int) in
+        print(value)
+        // receive 10
+    }
+
+subject.send("10")
 ```

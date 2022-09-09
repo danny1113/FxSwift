@@ -83,6 +83,17 @@ extension Pipe {
         .init(try await transform(object))
     }
     
+    @inlinable @inline(__always)
+    public func tryMap<Result>(
+        _ transform: @escaping (Object) throws -> Result?
+    ) throws -> Pipe<Result> {
+        guard let unwrap = try transform(object) else {
+            throw PipeError.foundNilValue(object)
+        }
+        return .init(unwrap)
+    }
+    
+    
     static public func => <Result>(
         lhs: Self, rhs: @escaping (Object) throws -> Result
     ) rethrows -> Pipe<Result> {
@@ -94,8 +105,22 @@ extension Pipe {
     ) async rethrows -> Pipe<Result> {
         .init(try await rhs(lhs.object))
     }
+    
+    static public func => <Result>(
+        lhs: Self, rhs: @escaping (Object) throws -> Result?
+    ) throws -> Pipe<Result> {
+        guard let unwrap = try rhs(lhs.object) else {
+            throw PipeError.foundNilValue(lhs.object)
+        }
+        return .init(unwrap)
+    }
+    
+    static public func =>? <Result>(
+        lhs: Self, rhs: @escaping (Object) -> Result?
+    ) -> Pipe<Result?> {
+        .init(rhs(lhs.object))
+    }
 }
-
 
 // MARK: - Pipe + combine
 
@@ -112,6 +137,7 @@ extension Pipe {
     ) -> Pipe<(Object, Other)> {
         .init((lhs.object, rhs.object))
     }
+    
     
     // combine + transform
     
@@ -157,46 +183,6 @@ extension Pipe {
         _ transform: @escaping (Object, O1, O2) async throws -> T
     ) async rethrows -> Pipe<T> {
         .init(try await transform(object, pipe1.object, pipe2.object))
-    }
-}
-
-
-// MARK: - Pipe + compactMap
-
-extension Pipe {
-//    @inlinable @inline(__always)
-//    public func compactMap<Result>(
-//        _ transform: @escaping (Object) -> Result?
-//    ) throws -> Pipe<Result> {
-//        guard let unwrap = transform(object) else {
-//            throw PipeError.foundNilValue(object)
-//        }
-//        return .init(unwrap)
-//    }
-    
-    @inlinable @inline(__always)
-    public func tryCompactMap<Result>(
-        _ transform: @escaping (Object) throws -> Result?
-    ) throws -> Pipe<Result> {
-        guard let unwrap = try transform(object) else {
-            throw PipeError.foundNilValue(object)
-        }
-        return .init(unwrap)
-    }
-    
-    static public func =>? <Result>(
-        lhs: Self, rhs: @escaping (Object) -> Result?
-    ) -> Pipe<Result?> {
-        .init(rhs(lhs.object))
-    }
-    
-    static public func => <Result>(
-        lhs: Self, rhs: @escaping (Object) throws -> Result?
-    ) throws -> Pipe<Result> {
-        guard let unwrap = try rhs(lhs.object) else {
-            throw PipeError.foundNilValue(lhs.object)
-        }
-        return .init(unwrap)
     }
 }
 
@@ -297,10 +283,7 @@ extension Pipe {
 }
 
 
-extension Publisher where Failure == Never {
-    
-    // flatMap
-    
+extension Publisher {
     public func map<Result>(
         _ transform: @escaping (Output) -> Pipe<Result>
     ) -> Publishers.Map<Self, Result> {
@@ -311,41 +294,34 @@ extension Publisher where Failure == Never {
     
     public func map<Result>(
         _ transform: @escaping (Output) async -> Pipe<Result>
-    ) -> AnyPublisher<Result, Never> {
-        flatMap { output in
+    ) async -> Publishers.FlatMap<Future<Result, Failure>, Self> {
+        flatMap { (output) -> Future<Result, Failure> in
             Future {
                 await transform(output).unwrap()
             }
         }
-        .eraseToAnyPublisher()
     }
     
-    // compactMap
     
     public func compactMap<Result>(
-        _ transform: @escaping (Output) throws -> Pipe<Result>
+        _ transform: @escaping (Output) -> Pipe<Result?>
     ) -> Publishers.CompactMap<Self, Result> {
         compactMap { output in
-            try? transform(output).unwrap()
+            transform(output).unwrap()
         }
     }
     
     public func compactMap<Result>(
-        _ transform: @escaping (Output) async throws -> Pipe<Result>
-    ) -> AnyPublisher<Result, Never> {
-        flatMap { output in
+        _ transform: @escaping (Output) async -> Pipe<Result?>
+    ) -> Publishers.CompactMap<Publishers.FlatMap<Future<Result?, Failure>, Self>, Result> {
+        flatMap { (output) -> Future<Result?, Failure> in
             Future {
-                try? await transform(output).unwrap()
+                await transform(output).unwrap()
             }
         }
         .compactMap { $0 }
-        .eraseToAnyPublisher()
     }
-}
-
-extension Publisher where Failure == Error {
     
-    // flatMap
     
     public func tryMap<Result>(
         _ transform: @escaping (Output) throws -> Pipe<Result>
@@ -358,17 +334,39 @@ extension Publisher where Failure == Error {
     public func tryMap<Result>(
         _ transform: @escaping (Output) async throws -> Pipe<Result>
     ) -> AnyPublisher<Result, Error> {
-        flatMap { output in
-            Future {
-                try await transform(output).unwrap()
+        self.mapError { $0 as Error }
+            .flatMap { (output) -> Future<Result, Error> in
+                Future {
+                    try await transform(output).unwrap()
+                }
             }
-        }
-        .eraseToAnyPublisher()
+            .eraseToAnyPublisher()
     }
     
-    // compactMap
     
-    public func compactMap<Result>(
+    public func tryCompactMap<Result>(
+        _ transform: @escaping (Output) throws -> Pipe<Result?>
+    ) -> Publishers.TryCompactMap<Self, Result> {
+        tryCompactMap { output in
+            try transform(output).unwrap()
+        }
+    }
+    
+    public func tryCompactMap<Result>(
+        _ transform: @escaping (Output) async throws -> Pipe<Result?>
+    ) -> AnyPublisher<Result, Error> {
+        self.mapError { $0 as Error }
+            .flatMap { (output) -> Future<Result?, Error> in
+                Future {
+                    try await transform(output).unwrap()
+                }
+            }
+            .compactMap { $0 }
+            .eraseToAnyPublisher()
+    }
+    
+    
+    public func compactTryMap<Result>(
         _ transform: @escaping (Output) throws -> Pipe<Result>
     ) -> Publishers.CompactMap<Self, Result> {
         compactMap { output in
@@ -376,16 +374,27 @@ extension Publisher where Failure == Error {
         }
     }
     
-    public func compactMap<Result>(
+    public func compactTryMap<Result>(
         _ transform: @escaping (Output) async throws -> Pipe<Result>
-    ) -> AnyPublisher<Result, Error> {
-        flatMap { output in
+    ) -> Publishers.CompactMap<Publishers.FlatMap<Future<Result?, Failure>, Self>, Result> {
+        flatMap { (output) -> Future<Result?, Failure> in
             Future {
                 try? await transform(output).unwrap()
             }
         }
         .compactMap { $0 }
-        .eraseToAnyPublisher()
+    }
+}
+
+extension Future {
+    public convenience init(
+        operation: @escaping () async -> Output
+    ) {
+        self.init { promise in
+            Task {
+                promise(.success(await operation()))
+            }
+        }
     }
 }
 
@@ -401,16 +410,6 @@ extension Future where Failure == Error {
                 } catch {
                     promise(.failure(error))
                 }
-            }
-        }
-    }
-}
-
-extension Future where Failure == Never {
-    public convenience init(operation: @escaping () async -> Output) {
-        self.init { promise in
-            Task {
-                promise(.success(await operation()))
             }
         }
     }
