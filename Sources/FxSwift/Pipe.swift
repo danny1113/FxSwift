@@ -301,7 +301,7 @@ extension Publisher where Failure == Never {
     
     // flatMap
     
-    public func flatMap<Result>(
+    public func map<Result>(
         _ transform: @escaping (Output) -> Pipe<Result>
     ) -> AnyPublisher<Result, Never> {
         map { output in
@@ -310,7 +310,7 @@ extension Publisher where Failure == Never {
         .eraseToAnyPublisher()
     }
     
-    public func flatMap<Result>(
+    public func map<Result>(
         _ transform: @escaping (Output) async -> Pipe<Result>
     ) -> AnyPublisher<Result, Never> {
         flatMap { output in
@@ -349,7 +349,7 @@ extension Publisher where Failure == Error {
     
     // flatMap
     
-    public func flatMap<Result>(
+    public func tryMap<Result>(
         _ transform: @escaping (Output) throws -> Pipe<Result>
     ) -> AnyPublisher<Result, Error> {
         tryMap { output in
@@ -358,7 +358,7 @@ extension Publisher where Failure == Error {
         .eraseToAnyPublisher()
     }
     
-    public func flatMap<Result>(
+    public func tryMap<Result>(
         _ transform: @escaping (Output) async throws -> Pipe<Result>
     ) -> AnyPublisher<Result, Error> {
         flatMap { output in

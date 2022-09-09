@@ -5,7 +5,7 @@ It can also interoperate with the Combine framework, bridge async await and Comb
 
 > **Note**: On non-Apple platforms, FxSwift use [OpenCombine](https://github.com/OpenCombine/OpenCombine) as open source Combine framework.
 
-## Introduction
+# Introduction
 
 The core of FxSwift is `Pipe`. It's a wrapper that takes a function, transform value and pass to the next chain.
 
@@ -20,7 +20,7 @@ public struct Pipe<Object> {
 }
 ```
 
-Main reason to use FxSwift:
+Reason to use FxSwift:
 
 - Lightweight
 - Easy to use
@@ -29,7 +29,7 @@ Main reason to use FxSwift:
 - Error handling with `try catch`
 - Interoperate with Combine
 
-### Example
+## Example
 
 ```swift
 let hello = Pipe("Hello")
@@ -61,7 +61,7 @@ let pipe = hello + world => comma  // hello, world
          + ex => combine           // hello, world!
 ```
 
-### Operators
+## Operators
 
 Pipe have 2 custom operators: `=>` and `+`.
 
@@ -117,6 +117,22 @@ let pipe: Pipe<T> = try await Pipe("http://www.example.com") // String
 ```
 
 You can also transform pipe to an AnyPublisher:
+
+```swift
+extension Publisher where Failure == Never {
+    public func map<Result>(_ transform: @escaping (Output) -> Pipe<Result>) -> AnyPublisher<Result, Never>
+    public func map<Result>(_ transform: @escaping (Output) async -> Pipe<Result>) -> AnyPublisher<Result, Never>
+    public func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
+    public func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
+}
+
+extension Publisher where Failure == Error {
+    public func tryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+    public func tryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+    public func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+    public func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+}
+```
 
 ```swift
 func toInt(string: String) throws -> Pipe<Int> {
