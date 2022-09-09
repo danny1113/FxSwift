@@ -49,9 +49,9 @@ That's say you want to combine three words into `"Hello, world!"` with functiona
 ```swift
 let pipe = hello
     .combine(world)  // Pipe<(String, String)>
-    .map(comma)      // Pipe<String>
+    .map(comma)      // hello, world
     .combine(ex)     // Pipe<(String, String)>
-    .map(combine)    // Pipe<String>
+    .map(combine)    // hello, world!
 ```
 
 Or you can use the convinent operator provided by Pipe:
@@ -63,16 +63,17 @@ let pipe = hello + world => comma  // hello, world
 
 ## Operators
 
-Pipe have 2 custom operators: `=>` and `+`.
+Pipe have 3 custom operators: `=>`, `=>?` and `+`.
 
 `=>` is for passing the value to the next function.
 
-> **Note**: Using `=>` will throw if an `nil` value is found. For passing `nil` value down to the chain, use `=>?`.
+> **Note**: Using `=>` will throw if an `nil` value is produced. For passing `nil` value down to the chain, use `=>?`.
 
 ```swift
 let url = try Pipe("https://www.example.com")
     => URL.init
     // will produce URL
+    // throw when URL is nil
 ```
 
 `=>?` is for passing an `Optional` to the chain.
@@ -92,9 +93,25 @@ let world = Pipe("world")
 let pipe = hello + world  // Pipe<(String, String>
 ```
 
-### Interoperate with Combine
+## Interoperate with Combine
 
 You can simply chain a function that returns an `AnyPublisher` to the pipe, and it will automatically transform to an async function for you.
+
+```swift
+extension Publisher where Failure == Never {
+    func map<Result>(_ transform: @escaping (Output) -> Pipe<Result>) -> AnyPublisher<Result, Never>
+    func map<Result>(_ transform: @escaping (Output) async -> Pipe<Result>) -> AnyPublisher<Result, Never>
+    func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
+    func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
+}
+
+extension Publisher where Failure == Error {
+    func tryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+    func tryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+    func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+    func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
+}
+```
 
 ```swift
 func dataTaskPublisher(
@@ -117,22 +134,6 @@ let pipe: Pipe<T> = try await Pipe("http://www.example.com") // String
 ```
 
 You can also transform pipe to an AnyPublisher:
-
-```swift
-extension Publisher where Failure == Never {
-    public func map<Result>(_ transform: @escaping (Output) -> Pipe<Result>) -> AnyPublisher<Result, Never>
-    public func map<Result>(_ transform: @escaping (Output) async -> Pipe<Result>) -> AnyPublisher<Result, Never>
-    public func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
-    public func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Never>
-}
-
-extension Publisher where Failure == Error {
-    public func tryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-    public func tryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-    public func compactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-    public func compactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-}
-```
 
 ```swift
 func toInt(string: String) throws -> Pipe<Int> {
