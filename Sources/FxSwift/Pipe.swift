@@ -37,6 +37,7 @@ public struct Pipe<Object> {
 }
 
 infix operator =>: AdditionPrecedence
+infix operator =>?: AdditionPrecedence
 
 
 extension Pipe: CustomStringConvertible {
@@ -161,7 +162,6 @@ extension Pipe {
 
 
 // MARK: - Pipe + compactMap
-infix operator =>?: AdditionPrecedence
 
 extension Pipe {
     @inlinable @inline(__always)
@@ -177,11 +177,14 @@ extension Pipe {
     @inlinable @inline(__always)
     public func tryCompactMap<Result>(
         _ transform: @escaping (Object) throws -> Result?
-    ) throws -> Pipe<Result?> {
-        return .init(try transform(object))
+    ) throws -> Pipe<Result> {
+        guard let unwrap = try transform(object) else {
+            throw PipeError.foundNilValue(object)
+        }
+        return .init(unwrap)
     }
     
-    static public func => <Result>(
+    static public func =>? <Result>(
         lhs: Self, rhs: @escaping (Object) -> Result?
     ) -> Pipe<Result?> {
         return .init(rhs(lhs.object))

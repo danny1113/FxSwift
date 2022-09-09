@@ -67,7 +67,30 @@ Pipe have 2 custom operators: `=>` and `+`.
 
 `=>` is for passing the value to the next function.
 
+> **Note**: Using `=>` will throw if an `nil` value is found. For passing `nil` value down to the chain, use `=>?`.
+
+```swift
+let url = try Pipe("https://www.example.com")
+    => URL.init
+    // will produce URL
+```
+
+`=>?` is for passing an `Optional` to the chain.
+
+```swift
+let url = Pipe("https://www.example.com")
+    =>? URL.init
+    // will produce URL?
+```
+
 `+` is for combining two pipes together.
+
+```swift
+let hello = Pipe("Hello")
+let world = Pipe("world")
+
+let pipe = hello + world  // Pipe<(String, String>
+```
 
 ### Interoperate with Combine
 

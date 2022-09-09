@@ -58,6 +58,20 @@ func dataTaskPipe(basket: String) async throws -> Pipe<String> {
     => decode(data:)
 }
 
+func dataTaskOptionalPipe(basket: String) async throws {
+    let pipe: Pipe<String> = try await Pipe(basket)
+    => { basket in
+        composeBasketURL(apiKey)(basket)
+    } =>? URL.init => { url in
+        guard let url = url else {
+            throw PipeError.foundNilValue(url as Any)
+        }
+        return dataTaskPublisher(with: URLRequest(url: url))
+    } => decode(data:)
+    
+    print(pipe)
+}
+
 
 func split(lhs: String, rhs: String) -> String {
     lhs + ", " + rhs
