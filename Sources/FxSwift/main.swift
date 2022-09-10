@@ -74,12 +74,13 @@ func dataTaskOptionalPipe(basket: String) async throws {
     } => decode(data:)
     
     print(pipe)
+    
 }
 
 let semaphore = DispatchSemaphore(value: 0)
 
 let subject = PassthroughSubject<String, Never>()
-    
+
 let cancellable = subject
     .compactTryMap(dataTaskPipe(basket:))
     // .compactTryMap(basketURL)

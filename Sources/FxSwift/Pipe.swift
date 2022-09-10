@@ -94,18 +94,21 @@ extension Pipe {
     }
     
     
+    @inlinable @inline(__always)
     static public func => <Result>(
         lhs: Self, rhs: @escaping (Object) throws -> Result
     ) rethrows -> Pipe<Result> {
         .init(try rhs(lhs.object))
     }
     
+    @inlinable @inline(__always)
     static public func => <Result>(
         lhs: Self, rhs: @escaping (Object) async throws -> Result
     ) async rethrows -> Pipe<Result> {
         .init(try await rhs(lhs.object))
     }
     
+    @inlinable @inline(__always)
     static public func => <Result>(
         lhs: Self, rhs: @escaping (Object) throws -> Result?
     ) throws -> Pipe<Result> {
@@ -115,6 +118,7 @@ extension Pipe {
         return .init(unwrap)
     }
     
+    @inlinable @inline(__always)
     static public func =>? <Result>(
         lhs: Self, rhs: @escaping (Object) -> Result?
     ) -> Pipe<Result?> {
@@ -132,6 +136,7 @@ extension Pipe {
         .init((object, other.object))
     }
     
+    @inlinable @inline(__always)
     static public func + <Other>(
         lhs: Self, rhs: Pipe<Other>
     ) -> Pipe<(Object, Other)> {

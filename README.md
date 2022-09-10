@@ -95,34 +95,7 @@ let pipe = hello + world  // Pipe<(String, String)>
 
 ## Interoperate with Combine
 
-### ### Publisher -> Pipe
-
-To interoperate with Combine, FxSwift extend Publisher to support Pipe:
-
-```swift
-extension Publisher {
-
-    public func map<Result>(_ transform: @escaping (Output) -> Pipe<Result>) -> Publishers.Map<Self, Result>
-
-    public func map<Result>(_ transform: @escaping (Output) async -> Pipe<Result>) async -> Publishers.FlatMap<Future<Result, Failure>, Self>
-
-    public func compactMap<Result>(_ transform: @escaping (Output) -> Pipe<Result?>) -> Publishers.CompactMap<Self, Result>
-
-    public func compactMap<Result>(_ transform: @escaping (Output) async -> Pipe<Result?>) -> Publishers.CompactMap<Publishers.FlatMap<Future<Result?, Failure>, Self>, Result>
-
-    public func tryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> Publishers.TryMap<Self, Result>
-
-    public func tryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result>) -> AnyPublisher<Result, Error>
-
-    public func tryCompactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result?>) -> Publishers.TryCompactMap<Self, Result>
-
-    public func tryCompactMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result?>) -> AnyPublisher<Result, Error>
-
-    public func compactTryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result?>) -> Publishers.CompactMap<Self, Result>
-
-    public func compactTryMap<Result>(_ transform: @escaping (Output) async throws -> Pipe<Result?>) -> Publishers.CompactMap<Publishers.FlatMap<Future<Result?, Failure>, Self>, Result>
-}
-```
+### Pipe -> Publisher -> Pipe
 
 You can simply chain a function that returns an `AnyPublisher` to the pipe, and it will automatically transform to an async function for you:
 
@@ -142,7 +115,7 @@ func decode<T: Decodable>(data: Data) throws -> T {
 
 //             |--- T can be any type that conforms to Decodable
 //             |
-//             |          |------ need to await due to dataTaskPublisher(for:)
+//             |          |--- need to await because of dataTaskPublisher(for:)
 //             |          |
 let pipe: Pipe<T> = try await Pipe("http://www.example.com")  // String
     => URL.init(string:)          // String => URL
