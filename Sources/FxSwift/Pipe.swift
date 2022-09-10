@@ -26,14 +26,39 @@ public struct Pipe<Object> {
     }
     
     @inlinable @inline(__always)
-    public init(_ closure: () throws -> Object) rethrows {
-        self.object = try closure()
-    }
-    
-    @inlinable @inline(__always)
     public func unwrap() -> Object {
         object
     }
+    
+//    @inlinable @inline(__always)
+//    public init<Input, Output>(
+//        callback: @escaping (Pipe<Input>) async throws -> Pipe<Output>
+//    ) where Object == (Input) async throws -> Output {
+//        self.object = { input in
+//            try await callback(.init(input)).object
+//        }
+//    }
+//
+//    @inlinable @inline(__always)
+//    public func unwrap<Input, Output>(_ value: Input) async throws -> Output
+//    where Object == (Input) async throws -> Output {
+//        try await object(value)
+//    }
+    
+//    @inlinable @inline(__always)
+//    public func publisher<Input, Output>(
+//        _ value: Input
+//    ) async throws -> AnyPublisher<Output, Error>
+//    where Object == (Input) async throws -> Output {
+//        Just(value)
+//            .mapError { $0 as Error }
+//            .flatMap { value in
+//                Future {
+//                    try await object(value)
+//                }
+//            }
+//            .eraseToAnyPublisher()
+//    }
 }
 
 infix operator =>: AdditionPrecedence
@@ -69,6 +94,8 @@ extension Pipe {
 // MARK: - Pipe + map
 
 extension Pipe {
+    
+    /// Transforms all elements with a provided closure.
     @inlinable @inline(__always)
     public func map<Result>(
         _ transform: @escaping (Object) throws -> Result
@@ -76,6 +103,7 @@ extension Pipe {
         .init(try transform(object))
     }
     
+    /// Transforms all elements with a provided closure.
     @inlinable @inline(__always)
     public func map<Result>(
         _ transform: @escaping (Object) async throws -> Result
@@ -83,6 +111,7 @@ extension Pipe {
         .init(try await transform(object))
     }
     
+    /// Transforms all elements with a provided error-throwing closure.
     @inlinable @inline(__always)
     public func tryMap<Result>(
         _ transform: @escaping (Object) throws -> Result?
@@ -93,7 +122,7 @@ extension Pipe {
         return .init(unwrap)
     }
     
-    
+    /// Transforms all elements with a provided error-throwing closure.
     @inlinable @inline(__always)
     static public func => <Result>(
         lhs: Self, rhs: @escaping (Object) throws -> Result
@@ -101,6 +130,7 @@ extension Pipe {
         .init(try rhs(lhs.object))
     }
     
+    /// Transforms all elements with a provided error-throwing closure.
     @inlinable @inline(__always)
     static public func => <Result>(
         lhs: Self, rhs: @escaping (Object) async throws -> Result
@@ -108,6 +138,8 @@ extension Pipe {
         .init(try await rhs(lhs.object))
     }
     
+    /// Transforms all elements with a provided error-throwing closure.
+    /// > Note: This operator will throw if an `nil` value is produced. For passing `nil` value down to the chain, use `=>?`.
     @inlinable @inline(__always)
     static public func => <Result>(
         lhs: Self, rhs: @escaping (Object) throws -> Result?
@@ -129,12 +161,6 @@ extension Pipe {
 // MARK: - Pipe + combine
 
 extension Pipe {
-    @inlinable @inline(__always)
-    public func combine<Other>(
-        _ other: Pipe<Other>
-    ) -> Pipe<(Object, Other)> {
-        .init((object, other.object))
-    }
     
     @inlinable @inline(__always)
     static public func + <Other>(
@@ -142,9 +168,17 @@ extension Pipe {
     ) -> Pipe<(Object, Other)> {
         .init((lhs.object, rhs.object))
     }
+}
+
+extension Pipe {
     
-    
-    // combine + transform
+    /// Combine with another pipe and return a new pipe with both values in a tuple.
+    @inlinable @inline(__always)
+    public func combine<Other>(
+        _ other: Pipe<Other>
+    ) -> Pipe<(Object, Other)> {
+        .init((object, other.object))
+    }
     
     @inlinable @inline(__always)
     public func combine<Other, T>(
@@ -161,9 +195,8 @@ extension Pipe {
     ) async rethrows -> Pipe<T> {
         .init(try await transform(object, other.object))
     }
-}
-
-extension Pipe {
+    
+    
     @inlinable @inline(__always)
     public func combine<O1, O2>(
         _ pipe1: Pipe<O1>,
@@ -360,8 +393,8 @@ extension Publisher {
     public func tryCompactMap<Result>(
         _ transform: @escaping (Output) async throws -> Pipe<Result?>
     ) -> AnyPublisher<Result, Error> {
-        self.mapError { $0 as Error }
-            .flatMap { (output) -> Future<Result?, Error> in
+        self.mapError { $0 as (any Error) }
+            .flatMap { (output) -> Future<Result?, any Error> in
                 Future {
                     try await transform(output).unwrap()
                 }

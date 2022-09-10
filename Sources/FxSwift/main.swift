@@ -32,7 +32,7 @@ func decodeJSON(data: Data) throws -> Any {
     try JSONSerialization.jsonObject(with: data)
 }
 
-func dataTaskPublisher(with request: URLRequest) -> AnyPublisher<Data, URLError> {
+func dataTaskPublisher(for request: URLRequest) -> AnyPublisher<Data, URLError> {
     URLSession.shared.dataTaskPublisher(for: request)
         .map(\.data)
         .eraseToAnyPublisher()
@@ -45,37 +45,21 @@ func composeBasketURL(_ key: String) -> (String) -> String {
     }
 }
 
-func basketURL(_ basket: String) throws -> Pipe<URL> {
-    let url = composeBasketURL(apiKey)(basket)
-    return try Pipe(url) => URL.init
-}
-
-func decode<T: Decodable>(data: Data) throws -> T {
-    try JSONDecoder().decode(T.self, from: data)
-}
-
 func dataTaskPipe(basket: String) async throws -> Pipe<String> {
-    try await basketURL(basket)
+    try await Pipe(basket)
+    => composeBasketURL(apiKey)
+    => URL.init(string:)
     => requestWithContentType(url:)
-    => dataTaskPublisher(with:)
-    // => decode(data:)
-    => { String(data: $0, encoding: .utf8 ) }
+    => dataTaskPublisher(for:)
+    => { String(data: $0, encoding: .utf8) }
 }
 
-func dataTaskOptionalPipe(basket: String) async throws {
-    let pipe: Pipe<String> = try await Pipe(basket)
-    => { basket in
-        composeBasketURL(apiKey)(basket)
-    } =>? URL.init => { url in
-        guard let url = url else {
-            throw PipeError.foundNilValue(url as Any)
-        }
-        return dataTaskPublisher(with: URLRequest(url: url))
-    } => decode(data:)
-    
-    print(pipe)
-    
-}
+let pipe = try await dataTaskPipe(basket: basketName)
++ dataTaskPipe(basket: "PantryKit_Test_Basket1")
+=> { $0 + "\n" + $1 }
+
+print(pipe.unwrap())
+
 
 let semaphore = DispatchSemaphore(value: 0)
 
@@ -83,7 +67,7 @@ let subject = PassthroughSubject<String, Never>()
 
 let cancellable = subject
     .compactTryMap(dataTaskPipe(basket:))
-    // .compactTryMap(basketURL)
+    .map { $0 }
     .sink { completion in
         switch completion {
         case .finished: return

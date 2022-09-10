@@ -7,6 +7,16 @@ It can also interoperate with the Combine framework, bridge async await and Comb
 
 # Introduction
 
+Reason to use FxSwift:
+
+- Lightweight
+- Easy to use
+- Testable
+- Runs on Linux too!
+- `async await` support
+- Error handling with `try catch`
+- Interoperate with Combine
+
 The core of FxSwift is `Pipe`. It's a wrapper that takes a function, transform value and pass to the next chain.
 
 ```swift
@@ -20,14 +30,18 @@ public struct Pipe<Object> {
 }
 ```
 
-Reason to use FxSwift:
+Pipe comes with various transform functions, the usage and effect are just like those in Combine:
 
-- Lightweight
-- Easy to use
-- Runs on Linux platforms too!
-- `async await` support
-- Error handling with `try catch`
-- Interoperate with Combine
+```swift
+/// Transforms all elements with a provided closure.
+public func map<Result>(_ transform: @escaping (Object) throws -> Result) rethrows -> Pipe<Result>
+
+/// Transforms all elements with a provided error-throwing closure.
+public func tryMap<Result>(_ transform: @escaping (Object) throws -> Result?) throws -> Pipe<Result>
+
+/// Combine with another pipe and return a new pipe with both values in a tuple.
+public func combine<Other>(_ other: Pipe<Other>) -> Pipe<(Object, Other)>
+```
 
 ## Example
 
@@ -59,6 +73,11 @@ Or you can use the convenient operator provided by Pipe:
 ```swift
 let pipe = hello + world => comma  // hello, world
          + ex => combine           // hello, world!
+         
+// or transform value inline:
+let pipe = hello + world
+    => { $0 + ", " + $1 }
+    + ex => { $0 + $1 }
 ```
 
 ## Operators
@@ -76,7 +95,7 @@ let url = try Pipe("https://www.example.com")
     // throw when URL is nil
 ```
 
-`=>?` is for passing an `Optional` to the chain.
+`=>?` is for passing an `Optional` down to the next chain.
 
 ```swift
 let url = Pipe("https://www.example.com")
@@ -95,7 +114,7 @@ let pipe = hello + world  // Pipe<(String, String)>
 
 ## Interoperate with Combine
 
-### Pipe -> Publisher -> Pipe
+### Pipe → Publisher → Pipe
 
 You can simply chain a function that returns an `AnyPublisher` to the pipe, and it will automatically transform to an async function for you:
 
@@ -123,7 +142,7 @@ let pipe: Pipe<T> = try await Pipe("http://www.example.com")  // String
     => decode(data:)              // Data => T
 ```
 
-### Pipe -> Publisher
+### Pipe → Publisher
 
 You can also transform pipe to an AnyPublisher:
 
@@ -145,4 +164,18 @@ let cancellable = subject
     }
 
 subject.send("10")
+```
+
+> **Note**: When testing Pipe with XCTest, please rename Pipe to prevent name collision with XCTest.
+
+```swift
+import XCTest
+import FxSwift
+
+final class FxSwiftTests: XCTestCase {
+
+    typealias Pipe = FxSwift.Pipe
+    
+    // ...
+}
 ```
