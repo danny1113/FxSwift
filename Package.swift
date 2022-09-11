@@ -5,42 +5,37 @@ import PackageDescription
 
 
 var dependencies: [Package.Dependency] = []
-var targets: [Target] = [
-    .executableTarget(
+var targets: [Target] = []
+
+#if canImport(OpenCombine)
+targets += [
+    .target(
+       name: "FxSwift",
+       dependencies: [
+           "OpenCombine",
+           .product(name: "OpenCombineFoundation", package: "OpenCombine"),
+           .product(name: "OpenCombineDispatch", package: "OpenCombine"),
+           .product(name: "OpenCombineShim", package: "OpenCombine"),
+       ]
+   ),
+]
+#else
+targets += [
+    .target(
         name: "FxSwift",
         dependencies: []
     ),
-    .testTarget(
-        name: "FxSwiftTests",
-        dependencies: [
-            "FxSwift"
-        ]
-    ),
-]
-
-#if !canImport(Combine)
-dependencies += [
-    .package(url: "https://github.com/OpenCombine/OpenCombine.git", from: "0.13.0")
-]
-
-targets = [
-    .executableTarget(
-        name: "FxSwift",
-        dependencies: [
-            "OpenCombine",
-            .product(name: "OpenCombineFoundation", package: "OpenCombine"),
-            .product(name: "OpenCombineDispatch", package: "OpenCombine"),
-            .product(name: "OpenCombineShim", package: "OpenCombine"),
-        ]
-    ),
-    .testTarget(
-        name: "FxSwiftTests",
-        dependencies: [
-            "FxSwift"
-        ]
-    ),
 ]
 #endif
+
+targets += [
+    .testTarget(
+        name: "FxSwiftTests",
+        dependencies: [
+            "FxSwift"
+        ]
+    ),
+]
 
 
 let package = Package(
@@ -50,6 +45,12 @@ let package = Package(
         .iOS(.v13),
         .watchOS(.v6),
         .tvOS(.v13),
+    ],
+    products: [
+        .library(
+            name: "FxSwift",
+            targets: ["FxSwift"]
+        ),
     ],
     dependencies: dependencies,
     targets: targets

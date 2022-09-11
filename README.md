@@ -3,8 +3,6 @@
 FxSwift is a declarative functional programming for Swift.  
 It can also interoperate with the Combine framework, bridge async await and Combine together.
 
-> **Note**: On non-Apple platforms, FxSwift use [OpenCombine](https://github.com/OpenCombine/OpenCombine) as open source Combine framework.
-
 # Introduction
 
 Reason to use FxSwift:
@@ -28,6 +26,12 @@ public struct Pipe<Object> {
     
     public func unwrap() -> Object
 }
+```
+
+> **Note**: If you got an error `cannot specialize non-generic type 'Pipe'`, please rename Pipe to solve name collision.
+
+```swift
+typealias Pipe = FxSwift.Pipe
 ```
 
 Pipe comes with various transform functions, the usage and effect are just like those in Combine:
@@ -114,6 +118,27 @@ let pipe = hello + world  // Pipe<(String, String)>
 
 ## Interoperate with Combine
 
+> **Note**: If you're using Linux and want to interoperate with Combine, you can add [OpenCombine](https://github.com/OpenCombine/OpenCombine) to your package dependency.
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/OpenCombine/OpenCombine.git", from: "0.13.0"),
+    .package(url: "https://github.com/danny1113/FxSwift.git", from: "0.1.0"),
+],
+targets: [
+    .target(
+        name: "<TARGET_NAME>",
+        dependencies: [
+            "OpenCombine",
+            .product(name: "OpenCombineFoundation", package: "OpenCombine"),
+            .product(name: "OpenCombineDispatch", package: "OpenCombine"),
+            .product(name: "OpenCombineShim", package: "OpenCombine"),
+            "FxSwift",
+        ]
+    )
+]
+```
+
 ### Pipe → Publisher → Pipe
 
 You can simply chain a function that returns an `AnyPublisher` to the pipe, and it will automatically transform to an async function for you:
@@ -164,18 +189,4 @@ let cancellable = subject
     }
 
 subject.send("10")
-```
-
-> **Note**: When testing Pipe with XCTest, please rename Pipe to prevent name collision with XCTest.
-
-```swift
-import XCTest
-import FxSwift
-
-final class FxSwiftTests: XCTestCase {
-
-    typealias Pipe = FxSwift.Pipe
-    
-    // ...
-}
 ```
