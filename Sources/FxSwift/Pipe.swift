@@ -84,9 +84,36 @@ extension Pipe {
     /// Transforms all elements with a provided error-throwing closure.
     @inlinable @inline(__always)
     public func tryMap<Result>(
+        _ transform: @escaping (Object) throws -> Result
+    ) throws -> Pipe<Result> {
+        .init(try transform(object))
+    }
+    
+    /// Transforms all elements with a provided error-throwing closure.
+    @inlinable @inline(__always)
+    public func tryMap<Result>(
+        _ transform: @escaping (Object) async throws -> Result
+    ) async throws -> Pipe<Result> {
+        .init(try await transform(object))
+    }
+    
+    /// Transforms all elements with a provided error-throwing closure.
+    @inlinable @inline(__always)
+    public func tryMap<Result>(
         _ transform: @escaping (Object) throws -> Result?
     ) throws -> Pipe<Result> {
         guard let unwrap = try transform(object) else {
+            throw PipeError.foundNilValue(object)
+        }
+        return .init(unwrap)
+    }
+    
+    /// Transforms all elements with a provided error-throwing closure.
+    @inlinable @inline(__always)
+    public func tryMap<Result>(
+        _ transform: @escaping (Object) async throws -> Result?
+    ) async throws -> Pipe<Result> {
+        guard let unwrap = try await transform(object) else {
             throw PipeError.foundNilValue(object)
         }
         return .init(unwrap)
@@ -120,11 +147,30 @@ extension Pipe {
         return .init(unwrap)
     }
     
+    /// Transforms all elements with a provided error-throwing closure.
+    /// > Note: This operator will throw if an `nil` value is produced. For passing `nil` value down to the chain, use `=>?`.
+    @inlinable @inline(__always)
+    static public func => <Result>(
+        lhs: Self, rhs: @escaping (Object) async throws -> Result?
+    ) async throws -> Pipe<Result> {
+        guard let unwrap = try await rhs(lhs.object) else {
+            throw PipeError.foundNilValue(lhs.object)
+        }
+        return .init(unwrap)
+    }
+    
     @inlinable @inline(__always)
     static public func =>? <Result>(
         lhs: Self, rhs: @escaping (Object) -> Result?
     ) -> Pipe<Result?> {
         .init(rhs(lhs.object))
+    }
+    
+    @inlinable @inline(__always)
+    static public func =>? <Result>(
+        lhs: Self, rhs: @escaping (Object) async -> Result?
+    ) async -> Pipe<Result?> {
+        .init(await rhs(lhs.object))
     }
 }
 

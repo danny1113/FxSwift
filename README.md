@@ -70,6 +70,8 @@ let pipe = hello
     .map(comma)      // "Hello, world"
     .combine(ex)     // ("Hello, world", "!")
     .map(combine)    // "Hello, world!"
+
+let result: String = pipe.unwrap()
 ```
 
 Or you can use the convenient operator provided by Pipe:
