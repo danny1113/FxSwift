@@ -66,22 +66,27 @@ That's say you want to combine three words into `"Hello, world!"` with functiona
 
 ```swift
 let pipe = hello
-    .combine(world)  // Pipe<(String, String)>
-    .map(comma)      // hello, world
-    .combine(ex)     // Pipe<(String, String)>
-    .map(combine)    // hello, world!
+    .combine(world)  // ("Hello", "world")
+    .map(comma)      // "Hello, world"
+    .combine(ex)     // ("Hello, world", "!")
+    .map(combine)    // "Hello, world!"
 ```
 
 Or you can use the convenient operator provided by Pipe:
 
 ```swift
-let pipe = hello + world => comma  // hello, world
-         + ex => combine           // hello, world!
-         
+let pipe = hello
+         + world     // ("Hello", "world")
+        => comma     // "Hello, world"
+         + ex        // ("Hello, world", "!")
+        => combine   // "Hello, world!"
+
 // or transform value inline:
-let pipe = hello + world
+let pipe = hello
+    + world
     => { $0 + ", " + $1 }
-    + ex => { $0 + $1 }
+    + ex
+    => { $0 + $1 }
 ```
 
 ## Operators
@@ -161,13 +166,32 @@ func decode<T: Decodable>(data: Data) throws -> T {
 //             |
 //             |          |--- need to await because of dataTaskPublisher(for:)
 //             |          |
-let pipe: Pipe<T> = try await Pipe("http://www.example.com")  // String
+let pipe: Pipe<T> = try await Pipe("http://www.example.com")
     => URL.init(string:)          // String => URL
     => dataTaskPublisher(for:)    // URL => Data
     => decode(data:)              // Data => T
 ```
 
 ### Pipe → Publisher
+
+There are several functions extends the Publisher protocol to help you transform pipe to an AnyPublisher, the usage is almost the same, except one: `compactTryMap`:
+
+```swift
+/// Transforms all elements with a provided closure.
+public func map<Result>(_ transform: @escaping (Output) -> Pipe<Result>) -> Publishers.Map<Self, Result>
+
+/// Calls a closure with each received element and publishes any returned optional that has a value.
+public func compactMap<Result>(_ transform: @escaping (Output) -> Pipe<Result?>) -> Publishers.CompactMap<Self, Result>
+
+/// Transforms all elements with a provided error-throwing closure.
+public func tryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> Publishers.TryMap<Self, Result>
+
+/// Calls an error-throwing closure with each received element and publishes any returned optional that has a value.
+public func tryCompactMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result?>) -> Publishers.TryCompactMap<Self, Result>
+
+/// Calls an error-throwing closure with each received element and publishes any returned optional that has a value.
+public func compactTryMap<Result>(_ transform: @escaping (Output) throws -> Pipe<Result>) -> Publishers.CompactMap<Self, Result>
+```
 
 You can also transform pipe to an AnyPublisher:
 

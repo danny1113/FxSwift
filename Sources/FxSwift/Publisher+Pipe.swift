@@ -1,5 +1,5 @@
 //
-//  Pipe+Publisher.swift
+//  Publisher+Pipe.swift
 //  
 //
 //  Created by Danny on 2022/9/8.
@@ -104,6 +104,7 @@ extension Pipe {
 
 
 extension Publisher {
+    /// Transforms all elements with a provided closure.
     public func map<Result>(
         _ transform: @escaping (Output) -> Pipe<Result>
     ) -> Publishers.Map<Self, Result> {
@@ -112,6 +113,7 @@ extension Publisher {
         }
     }
     
+    /// Transforms all elements with a provided closure.
     public func map<Result>(
         _ transform: @escaping (Output) async -> Pipe<Result>
     ) async -> Publishers.FlatMap<Future<Result, Failure>, Self> {
@@ -124,7 +126,7 @@ extension Publisher {
 }
 
 extension Publisher {
-    
+    /// Calls a closure with each received element and publishes any returned optional that has a value.
     public func compactMap<Result>(
         _ transform: @escaping (Output) -> Pipe<Result?>
     ) -> Publishers.CompactMap<Self, Result> {
@@ -133,6 +135,7 @@ extension Publisher {
         }
     }
     
+    /// Calls a closure with each received element and publishes any returned optional that has a value.
     public func compactMap<Result>(
         _ transform: @escaping (Output) async -> Pipe<Result?>
     ) -> Publishers.CompactMap<Publishers.FlatMap<Future<Result?, Failure>, Self>, Result> {
@@ -146,7 +149,7 @@ extension Publisher {
 }
 
 extension Publisher {
-    
+    /// Transforms all elements with a provided error-throwing closure.
     public func tryMap<Result>(
         _ transform: @escaping (Output) throws -> Pipe<Result>
     ) -> Publishers.TryMap<Self, Result> {
@@ -155,6 +158,7 @@ extension Publisher {
         }
     }
     
+    /// Transforms all elements with a provided error-throwing closure.
     public func tryMap<Result>(
         _ transform: @escaping (Output) async throws -> Pipe<Result>
     ) -> AnyPublisher<Result, Error> {
@@ -170,6 +174,7 @@ extension Publisher {
 
 extension Publisher {
     
+    /// Calls an error-throwing closure with each received element and publishes any returned optional that has a value.
     public func tryCompactMap<Result>(
         _ transform: @escaping (Output) throws -> Pipe<Result?>
     ) -> Publishers.TryCompactMap<Self, Result> {
@@ -178,6 +183,7 @@ extension Publisher {
         }
     }
     
+    /// Calls an error-throwing closure with each received element and publishes any returned optional that has a value.
     public func tryCompactMap<Result>(
         _ transform: @escaping (Output) async throws -> Pipe<Result?>
     ) -> AnyPublisher<Result, Error> {
