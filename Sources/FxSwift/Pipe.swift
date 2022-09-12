@@ -173,9 +173,3 @@ extension Pipe {
         .init(await rhs(lhs.object))
     }
 }
-
-
-precedencegroup PipePrecedence {
-    associativity: left
-    assignment: true
-}
