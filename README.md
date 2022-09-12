@@ -41,7 +41,7 @@ Pipe comes with various transform functions, the usage and effect are just like 
 public func map<Result>(_ transform: @escaping (Object) throws -> Result) rethrows -> Pipe<Result>
 
 /// Transforms all elements with a provided error-throwing closure.
-public func tryMap<Result>(_ transform: @escaping (Object) throws -> Result?) throws -> Pipe<Result>
+public func tryMap<Result>(_ transform: @escaping (Object) throws -> Result) throws -> Pipe<Result>
 
 /// Combine with another pipe and return a new pipe with both values in a tuple.
 public func combine<Other>(_ other: Pipe<Other>) -> Pipe<(Object, Other)>
@@ -176,7 +176,9 @@ let pipe: Pipe<T> = try await Pipe("http://www.example.com")
 
 ### Pipe → Publisher
 
-There are several functions extends the Publisher protocol to help you transform pipe to an AnyPublisher, the usage is almost the same, except one: `compactTryMap`:
+There are several functions extends the Publisher protocol to help you transform pipe to an AnyPublisher, the usage is almost the same, except one: `compactTryMap`.  
+
+Instead of throwing an error, `compactTryMap` will transform your data to nil if an error is thrown.
 
 ```swift
 /// Transforms all elements with a provided closure.
@@ -215,4 +217,19 @@ let cancellable = subject
     }
 
 subject.send("10")
+```
+
+# CustomPipeConvertible
+
+You can conform your custom type to `CustomPipeConvertible`, and you can use the convenient function to wrap your custom data type into a pipe:
+
+```swift
+struct MyCustomType {
+
+}
+
+extension MyCustomType: CustomPipeConvertible { }
+
+// and now you can just call:
+let pipe: Pipe<MyCustomType> = MyCustomType().pipe()
 ```
