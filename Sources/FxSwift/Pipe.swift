@@ -41,6 +41,7 @@ extension Pipe: CustomStringConvertible {
     }
 }
 
+extension Pipe: Sendable where Object: Sendable { }
 extension Pipe: Decodable where Object: Decodable { }
 extension Pipe: Encodable where Object: Encodable { }
 extension Pipe: Hashable where Object: Hashable { }
@@ -52,33 +53,20 @@ extension Pipe: Comparable where Object: Comparable {
 }
 
 extension Pipe {
-    @discardableResult
-    public func log(_ closure: @escaping (Object) -> Void) -> Self {
-        print("----------------")
-        closure(object)
-        print("----------------")
-        return self
-    }
-}
-
-// MARK: - Pipe + map
-
-extension Pipe {
-    
     /// Transforms all elements with a provided closure.
     @inlinable @inline(__always)
     public func map<Result>(
-        _ transform: @escaping (Object) throws -> Result
-    ) rethrows -> Pipe<Result> {
-        .init(try transform(object))
+        _ transform: @escaping (Object) -> Result
+    ) -> Pipe<Result> {
+        .init(transform(object))
     }
     
     /// Transforms all elements with a provided closure.
     @inlinable @inline(__always)
     public func map<Result>(
-        _ transform: @escaping (Object) async throws -> Result
-    ) async rethrows -> Pipe<Result> {
-        .init(try await transform(object))
+        _ transform: @escaping (Object) async -> Result
+    ) async -> Pipe<Result> {
+        .init(await transform(object))
     }
     
     /// Transforms all elements with a provided error-throwing closure.

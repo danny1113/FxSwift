@@ -38,7 +38,7 @@ Pipe comes with various transform functions, the usage and effect are just like 
 
 ```swift
 /// Transforms all elements with a provided closure.
-public func map<Result>(_ transform: @escaping (Object) throws -> Result) rethrows -> Pipe<Result>
+public func map<Result>(_ transform: @escaping (Object) -> Result) -> Pipe<Result>
 
 /// Transforms all elements with a provided error-throwing closure.
 public func tryMap<Result>(_ transform: @escaping (Object) throws -> Result) throws -> Pipe<Result>
@@ -178,7 +178,7 @@ let pipe: Pipe<T> = try await Pipe("http://www.example.com")
 
 There are several functions extends the Publisher protocol to help you transform pipe to an AnyPublisher, the usage is almost the same, except one: `compactTryMap`.  
 
-Instead of throwing an error, `compactTryMap` will transform your data to nil if an error is thrown.
+Instead of throwing an error, `compactTryMap` use `try?` and will transform your data to nil if an error is thrown.
 
 ```swift
 /// Transforms all elements with a provided closure.
@@ -207,8 +207,8 @@ func toInt(string: String) throws -> Pipe<Int> {
 let subject = PassthroughSubject<String, Error>()
 
 let cancellable = subject
-    .compactMap(toInt(string:))
-    // => AnyPublisher<Int, Error>
+    .tryMap(toInt(string:))
+    // -> AnyPublisher<Int, Error>
     .sink { completion in
         
     } receivedValue: { (value: Int) in
