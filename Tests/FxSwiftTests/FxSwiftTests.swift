@@ -55,6 +55,12 @@ final class FxSwiftTests: XCTestCase {
         }
         print(pipe)
     }
+
+    func testOptionPipe() throws {
+        XCTAssertNil(toURL(string: "https:// www.example.com").unwrap())
+        XCTAssertNotNil(toURL(string: "https://www.example.com").unwrap())
+    }
+
     
     func toURL(string: String) -> Pipe<URL?> {
         Pipe(string) =>? URL.init(string:)
@@ -65,13 +71,6 @@ final class FxSwiftTests: XCTestCase {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
     }
-    
-    func dataTaskPublisher(for request: URLRequest) -> AnyPublisher<Data, URLError> {
-        URLSession.shared.dataTaskPublisher(for: request)
-            .retry(2)
-            .map(\.data)
-            .eraseToAnyPublisher()
-    }
 
     func decodeJSON(data: Data) throws -> Any {
         try JSONSerialization.jsonObject(with: data)
@@ -79,6 +78,15 @@ final class FxSwiftTests: XCTestCase {
     
     func decode<T: Decodable>(data: Data) throws -> T {
         try JSONDecoder().decode(T.self, from: data)
+    }
+
+#if canImport(Combine) || canImport(OpenCombine)
+
+    func dataTaskPublisher(for request: URLRequest) -> AnyPublisher<Data, URLError> {
+        URLSession.shared.dataTaskPublisher(for: request)
+            .retry(2)
+            .map(\.data)
+            .eraseToAnyPublisher()
     }
     
     private var cancellable: AnyCancellable?
@@ -112,8 +120,6 @@ final class FxSwiftTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
     
-    func testOptionPipe() throws {
-        XCTAssertNil(toURL(string: "https:// www.example.com").unwrap())
-        XCTAssertNotNil(toURL(string: "https://www.example.com").unwrap())
-    }
+#endif
+
 }
