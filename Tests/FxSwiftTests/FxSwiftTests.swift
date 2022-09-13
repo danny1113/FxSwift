@@ -4,10 +4,10 @@ import FxSwift
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
+
 #if canImport(Combine)
 import Combine
-#endif
-#if canImport(OpenCombine)
+#elseif canImport(OpenCombine)
 import OpenCombineShim
 #endif
 
@@ -119,7 +119,7 @@ final class FxSwiftTests: XCTestCase {
         subject.send("http://www.example3.com")
         wait(for: [expectation], timeout: 1)
     }
-    
+
 #endif
 
 }

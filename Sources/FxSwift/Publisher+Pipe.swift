@@ -7,8 +7,7 @@
 
 #if canImport(Combine)
 import Combine
-#endif
-#if canImport(OpenCombine)
+#elseif canImport(OpenCombine)
 import OpenCombine
 #endif
 
