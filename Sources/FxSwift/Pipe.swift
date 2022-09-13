@@ -5,14 +5,6 @@
 //  Created by Danny on 2022/9/7.
 //
 
-import Foundation
-#if canImport(Combine)
-import Combine
-#endif
-#if canImport(OpenCombine)
-import OpenCombine
-#endif
-
 
 @frozen
 public struct Pipe<Object> {
@@ -37,7 +29,7 @@ infix operator =>?: AdditionPrecedence
 
 extension Pipe: CustomStringConvertible {
     public var description: String {
-        return String(describing: object)
+        String(describing: object)
     }
 }
 
