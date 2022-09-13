@@ -62,6 +62,7 @@ func combine(lhs: String, rhs: String) -> String {
     lhs + rhs
 }
 ```
+
 That's say you want to combine three words into `"Hello, world!"` with functional programming:
 
 ```swift
