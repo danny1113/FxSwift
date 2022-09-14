@@ -22,7 +22,6 @@ The core of FxSwift is `Pipe`. It's a wrapper that takes a function, transform v
 public struct Pipe<Object> {
 
     public init(_ object: Object)
-    public init(_ closure: () throws -> Object) rethrows
     
     public func unwrap() -> Object
 }
@@ -140,7 +139,6 @@ targets: [
             "OpenCombine",
             .product(name: "OpenCombineFoundation", package: "OpenCombine"),
             .product(name: "OpenCombineDispatch", package: "OpenCombine"),
-            .product(name: "OpenCombineShim", package: "OpenCombine"),
             "FxSwift",
         ]
     )
@@ -167,8 +165,10 @@ func decode<T: Decodable>(data: Data) throws -> T {
 
 //             |--- T can be any type that conforms to Decodable
 //             |
-//             |          |--- need to await because of dataTaskPublisher(for:)
-//             |          |
+//             |     |--- may throw an error because URL.init(string:) and dataTaskPublisher(for:)
+//             |     |
+//             |     |    |--- need to await because of dataTaskPublisher(for:)
+//             |     |    |
 let pipe: Pipe<T> = try await Pipe("http://www.example.com")
     => URL.init(string:)          // String => URL
     => dataTaskPublisher(for:)    // URL => Data
