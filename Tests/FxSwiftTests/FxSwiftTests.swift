@@ -7,8 +7,6 @@ import FoundationNetworking
 
 #if canImport(Combine)
 import Combine
-#elseif canImport(OpenCombine)
-import OpenCombineShim
 #endif
 
 
@@ -80,7 +78,7 @@ final class FxSwiftTests: XCTestCase {
         try JSONDecoder().decode(T.self, from: data)
     }
 
-#if canImport(Combine) || canImport(OpenCombine)
+#if canImport(Combine)
 
     func dataTaskPublisher(for request: URLRequest) -> AnyPublisher<Data, URLError> {
         URLSession.shared.dataTaskPublisher(for: request)

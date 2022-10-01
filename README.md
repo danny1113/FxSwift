@@ -125,25 +125,7 @@ let pipe = hello + world  // Pipe<(String, String)>
 
 ## Interoperate with Combine
 
-> **Note**: If you're using Linux and want to interoperate with Combine, you can add [OpenCombine](https://github.com/OpenCombine/OpenCombine) to your package dependency.
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/OpenCombine/OpenCombine.git", from: "0.13.0"),
-    .package(url: "https://github.com/danny1113/FxSwift.git", from: "0.1.0"),
-],
-targets: [
-    .target(
-        name: "<TARGET_NAME>",
-        dependencies: [
-            "OpenCombine",
-            .product(name: "OpenCombineFoundation", package: "OpenCombine"),
-            .product(name: "OpenCombineDispatch", package: "OpenCombine"),
-            "FxSwift",
-        ]
-    )
-]
-```
+> **Note**: Combine interoperability is currently only available on Apple platforms.
 
 ### Pipe → Publisher → Pipe
 

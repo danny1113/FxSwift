@@ -7,26 +7,12 @@ import PackageDescription
 var dependencies: [Package.Dependency] = []
 var targets: [Target] = []
 
-#if canImport(OpenCombine)
-targets += [
-    .target(
-       name: "FxSwift",
-       dependencies: [
-           "OpenCombine",
-           .product(name: "OpenCombineFoundation", package: "OpenCombine"),
-           .product(name: "OpenCombineDispatch", package: "OpenCombine"),
-           .product(name: "OpenCombineShim", package: "OpenCombine"),
-       ]
-   ),
-]
-#else
 targets += [
     .target(
         name: "FxSwift",
         dependencies: []
     ),
 ]
-#endif
 
 targets += [
     .testTarget(
