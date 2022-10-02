@@ -4,6 +4,15 @@
 FxSwift is a declarative functional programming package for Swift.  
 It can also interoperate with the Combine framework, bridge async await and Combine together.
 
+# Installation
+
+```swift
+dependencies: [
+    // ...
+    .package(url: "https://github.com/danny1113/FxSwift.git", from: "1.0.0")
+]
+```
+
 # Introduction
 
 Reason to use FxSwift:
