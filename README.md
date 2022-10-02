@@ -1,6 +1,7 @@
+
 # FxSwift
 
-FxSwift is a declarative functional programming for Swift.  
+FxSwift is a declarative functional programming package for Swift.  
 It can also interoperate with the Combine framework, bridge async await and Combine together.
 
 # Introduction
@@ -10,10 +11,10 @@ Reason to use FxSwift:
 - Lightweight
 - Easy to use
 - Testable
-- Runs on Linux too!
+- Support Linux platforms
 - `async await` support
 - Error handling with `try catch`
-- Interoperate with Combine
+- Interoperate with Combine*
 
 The core of FxSwift is `Pipe`. It's a wrapper that takes a function, transform value and pass to the next chain.
 

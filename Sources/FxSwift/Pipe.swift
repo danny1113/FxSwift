@@ -12,7 +12,6 @@ public struct Pipe<Object> {
     @usableFromInline
     internal let object: Object
     
-    @inlinable @inline(__always)
     public init(_ object: Object) {
         self.object = object
     }
@@ -25,24 +24,6 @@ public struct Pipe<Object> {
 
 infix operator =>: AdditionPrecedence
 infix operator =>?: AdditionPrecedence
-
-
-extension Pipe: CustomStringConvertible {
-    public var description: String {
-        String(describing: object)
-    }
-}
-
-extension Pipe: Sendable where Object: Sendable { }
-extension Pipe: Decodable where Object: Decodable { }
-extension Pipe: Encodable where Object: Encodable { }
-extension Pipe: Hashable where Object: Hashable { }
-extension Pipe: Equatable where Object: Equatable { }
-extension Pipe: Comparable where Object: Comparable {
-    public static func < (lhs: Pipe<Object>, rhs: Pipe<Object>) -> Bool {
-        lhs.object < rhs.object
-    }
-}
 
 extension Pipe {
     /// Transforms all elements with a provided closure.
