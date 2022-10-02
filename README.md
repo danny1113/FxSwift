@@ -212,7 +212,7 @@ let cancellable = subject
 subject.send("10")
 ```
 
-# CustomPipeConvertible
+## CustomPipeConvertible
 
 You can conform your custom type to `CustomPipeConvertible`, and you can use the convenient function to wrap your custom data type into a pipe:
 
